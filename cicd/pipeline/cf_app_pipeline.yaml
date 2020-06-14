@@ -18,6 +18,12 @@ Parameters:
   EcrRepoName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: "/joneteus-spring-petclinic/ecr/repo-name"
+  EcsServiceName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/joneteus-spring-petclinic/ecs/service-name"
+  EcsClusterName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/joneteus-spring-petclinic/ecs/cluster-name"
 
 Resources:
   CodePipelineArtifactStoreBucket:
@@ -90,6 +96,26 @@ Resources:
           - Name: IMAGE_TAG
             Value: "latest"
 
+  SpringPetclinicEcsDeploy:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/deploy/buildspec-ecs-deploy.yml
+      TimeoutInMinutes: 15
+      ServiceRole: !Ref CodeBuildServiceRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        EnvironmentVariables:
+          - Name: ECS_SERVICE_NAME
+            Value: !Ref EcsServiceName
+          - Name: ECS_CLUSTER_NAME
+            Value: !Ref EcsClusterName
+
   AppPipelineWebhook:
     Type: AWS::CodePipeline::Webhook
     Properties:
@@ -142,3 +168,15 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 ProjectName: !Ref SpringPetclinicDocker
+        - Name: EcsDeploy
+          Actions:
+            - Name: Deployment
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref SpringPetclinicEcsDeploy
