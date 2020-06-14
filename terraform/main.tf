@@ -116,7 +116,7 @@ resource aws_ecs_service joneteus-spring-petclinic {
   desired_count = 1
   network_configuration {
     assign_public_ip = true
-    security_groups = [ aws_security_group.joneteus-spring-petclinic-ecs.name ]
+    security_groups = [ aws_security_group.joneteus-spring-petclinic-ecs.id ]
     subnets = [
       aws_default_subnet.subnet-a.id,
       aws_default_subnet.subnet-b.id,
