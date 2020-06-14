@@ -14,3 +14,8 @@ phases:
       - terraform init
       - terraform validate
       - terraform plan
+
+  build:
+    commands:
+      - cd $CODEBUILD_SRC_DIR/terraform
+      - terraform apply
