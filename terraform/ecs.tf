@@ -92,4 +92,6 @@ resource aws_ecs_service joneteus-spring-petclinic {
     container_name   = var.app_name
     container_port   = 8080
   }
+
+  depends_on = [aws_lb.joneteus-spring-petclinic-alb]
 }
