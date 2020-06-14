@@ -1,4 +1,7 @@
 variable aws_region {}
+variable vpc_cidr_block {}
+variable subnet_public_cidrs {}
+variable subnet_private_cidrs {}
 
 
 provider aws {
@@ -7,25 +10,67 @@ provider aws {
 }
 
 # Networking
-resource aws_default_vpc default {
+
+## Generic VPC stuff
+resource aws_vpc joneteus-spring-petclinic-vpc {
+  cidr_block       = var.vpc_cidr_block
+  enable_dns_hostnames = true
 }
 
-resource aws_default_subnet subnet-a {
+resource aws_internet_gateway joneteus-spring-petclinic-igw {
+  vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
+}
+
+## Public subnets
+resource aws_route_table joneteus-spring-petclinic-public-rt {
+  vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.joneteus-spring-petclinic-igw.id
+  }
+}
+
+resource aws_subnet public-subnet-a {
+  vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
+  cidr_block = var.subnet_public_cidrs[0]
   availability_zone = join("", [var.aws_region, "a"])
+  map_public_ip_on_launch = true
 }
 
-resource aws_default_subnet subnet-b {
-  availability_zone = join("", [var.aws_region, "b"])
+resource aws_route_table_association public-subnet-a-rt-ass {
+  subnet_id      = aws_subnet.public-subnet-a.id
+  route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
 }
 
-resource aws_default_subnet subnet-c {
-  availability_zone = join("", [var.aws_region, "c"])
+resource aws_subnet public-subnet-b {
+  vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
+  cidr_block = var.subnet_public_cidrs[1]
+  availability_zone = join("", [var.aws_region, "a"])
+  map_public_ip_on_launch = true
+}
+
+resource aws_route_table_association public-subnet-b-rt-ass {
+  subnet_id      = aws_subnet.public-subnet-b.id
+  route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
+}
+
+resource aws_subnet public-subnet-c {
+  vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
+  cidr_block = var.subnet_public_cidrs[2]
+  availability_zone = join("", [var.aws_region, "a"])
+  map_public_ip_on_launch = true
+}
+
+resource aws_route_table_association public-subnet-c-rt-ass {
+  subnet_id      = aws_subnet.public-subnet-c.id
+  route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
 }
 
 resource aws_security_group joneteus-spring-petclinic-ecs {
   name        = "joneteus-spring-petclinic-ecs"
   description = "Security group for joneteus-spring-petclinic ECS application"
-  vpc_id      = aws_default_vpc.default.id
+  vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
 
   ingress {
     description = "HTTP 8080 from home"
@@ -114,13 +159,14 @@ resource aws_ecs_service joneteus-spring-petclinic {
   task_definition = aws_ecs_task_definition.joneteus-spring-petclinic.arn
   launch_type = "FARGATE"
   desired_count = 1
+
   network_configuration {
     assign_public_ip = true
     security_groups = [ aws_security_group.joneteus-spring-petclinic-ecs.id ]
     subnets = [
-      aws_default_subnet.subnet-a.id,
-      aws_default_subnet.subnet-b.id,
-      aws_default_subnet.subnet-c.id
+      aws_subnet.public-subnet-a.id,
+      aws_subnet.public-subnet-b.id,
+      aws_subnet.public-subnet-c.id
       ]
   }
 }
