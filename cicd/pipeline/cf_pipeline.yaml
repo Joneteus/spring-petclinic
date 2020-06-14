@@ -64,22 +64,24 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-  # AppPipelineWebhook:
-  #   Type: AWS::CodePipeline::Webhook
-  #   Properties:
-  #     Authentication: GITHUB_HMAC
-  #     AuthenticationConfiguration:
-  #       SecretToken: !Sub "{{resolve:secretsmanager:${GithubTokenSecretArn}:SecretString:token}}"
-  #     Filters:
-  #       - JsonPath: $.ref
-  #         MatchEquals: "refs/heads/{Branch}"
-  #     TargetPipeline: !Ref Pipeline
-  #     TargetAction: SourceAction
-  #     Name: AppPipelineWebhook
-  #     TargetPipelineVersion: !GetAtt
-  #       - Pipeline
-  #       - Version
-  #     RegisterWithThirdParty: true
+
+  AppPipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Sub "{{resolve:secretsmanager:${GithubTokenSecretArn}:SecretString:token}}"
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: "refs/heads/{Branch}"
+      TargetPipeline: !Ref Pipeline
+      TargetAction: SourceAction
+      Name: AppPipelineWebhook
+      TargetPipelineVersion: !GetAtt
+        - Pipeline
+        - Version
+      RegisterWithThirdParty: true
+
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
