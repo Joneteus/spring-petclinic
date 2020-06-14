@@ -74,7 +74,7 @@ resource aws_ecs_service joneteus-spring-petclinic {
   name = "${var.app_name}-service"
   cluster = aws_ecs_cluster.joneteus-spring-petclinic.id
   launch_type = "FARGATE"
-  platform_version = "1.4.0"
+  platform_version = "1.3.0"
   task_definition = aws_ecs_task_definition.joneteus-spring-petclinic.arn
   desired_count = 1
 
