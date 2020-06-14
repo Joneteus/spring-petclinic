@@ -118,6 +118,39 @@ resource aws_route_table_association private-subnet-c-rta {
   route_table_id = aws_route_table.joneteus-spring-petclinic-private-rt.id
 }
 
+# Load Balancing
+resource aws_security_group joneteus-spring-petclinic-alb-sg {
+  name_prefix = "joneteus-spring-petclinic-alb"
+  description = "Security group for joneteus-spring-petclinic Application Load Balancer"
+  vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource aws_lb joneteus-spring-petclinic-alb {
+  name               = "joneteus-spring-petclinic-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.joneteus-spring-petclinic-alb-sg.id]
+  subnets            = [
+    aws_subnet.public-subnet-a.id, 
+    aws_subnet.public-subnet-b.id, 
+    aws_subnet.public-subnet-c.id
+  ]
+}
+
 # Base resources for ECS
 resource aws_ecr_repository joneteus-spring-petclinic {
   name = "joneteus-spring-petclinic"
