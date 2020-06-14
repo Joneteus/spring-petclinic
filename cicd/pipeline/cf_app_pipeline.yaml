@@ -48,6 +48,7 @@ Resources:
       ManagedPolicyArns:
         - !Ref CodePipelineArtifactStoreAccessPolicy
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
