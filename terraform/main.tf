@@ -54,7 +54,7 @@ resource aws_route_table_association public-subnet-a-rta {
 resource aws_subnet public-subnet-b {
   vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
   cidr_block = var.subnet_public_cidrs[1]
-  availability_zone = join("", [var.aws_region, "a"])
+  availability_zone = join("", [var.aws_region, "b"])
   map_public_ip_on_launch = true
 }
 
@@ -66,7 +66,7 @@ resource aws_route_table_association public-subnet-b-rta {
 resource aws_subnet public-subnet-c {
   vpc_id = aws_vpc.joneteus-spring-petclinic-vpc.id
   cidr_block = var.subnet_public_cidrs[2]
-  availability_zone = join("", [var.aws_region, "a"])
+  availability_zone = join("", [var.aws_region, "c"])
   map_public_ip_on_launch = true
 }
 
@@ -116,28 +116,6 @@ resource aws_subnet private-subnet-c {
 resource aws_route_table_association private-subnet-c-rta {
   subnet_id      = aws_subnet.private-subnet-c.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-private-rt.id
-}
-
-resource aws_security_group joneteus-spring-petclinic-ecs-sg {
-  name_prefix        = "joneteus-spring-petclinic-ecs"
-  description = "Security group for joneteus-spring-petclinic ECS application"
-  vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
-
-  ingress {
-    description = "HTTP 8080 from home"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["88.148.236.57/32"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
 }
 
 # Base resources for ECS
@@ -204,6 +182,28 @@ EOF
 }
 
 # ECS Service
+resource aws_security_group joneteus-spring-petclinic-ecs-sg {
+  name_prefix        = "joneteus-spring-petclinic-ecs"
+  description = "Security group for joneteus-spring-petclinic ECS application"
+  vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
+
+  ingress {
+    description = "HTTP 8080 from home"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["88.148.236.57/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
 resource aws_ecs_service joneteus-spring-petclinic {
   name = "joneteus-spring-petclinic-service"
   cluster = aws_ecs_cluster.joneteus-spring-petclinic.id
