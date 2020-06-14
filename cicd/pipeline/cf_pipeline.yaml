@@ -37,6 +37,17 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonVPCFullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: allow-access-to-ddb-lock
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DeleteItem"
+                Resource: arn:aws:dynamodb:eu-north-1:836922991352:table/aws-spring-petclinic-lock
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
