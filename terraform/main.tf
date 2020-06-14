@@ -52,3 +52,32 @@ resource aws_iam_role joneteus-spring-petclinic-ecs-task-exec {
   name = "joneteus-spring-petclinic-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.joneteus-spring-petclinic-assume.json
 }
+
+# ECS Task Definition
+resource aws_ecs_task_definition joneteus-spring-petclinic {
+  family = "joneteus-spring-petclinic"
+  requires_compatibilities = ["FARGATE"]
+  cpu = 512
+  memory = 1024
+  network_mode = "awsvpc"
+  execution_role_arn = aws_iam_role.joneteus-spring-petclinic-ecs-task-exec.arn
+  container_definitions = <<EOF
+[
+  {
+    "name": "joneteus-spring-petclinic",
+    "image": "${aws_ecr_repository.joneteus-spring-petclinic.repository_url}:latest",
+    "essential": true,
+    "cpu": 512,
+    "memory": 1024,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "${var.aws_region}",
+        "awslogs-group": "joneteus-spring-petclinic",
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }
+]
+EOF
+}
