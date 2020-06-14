@@ -1,13 +1,11 @@
-terraform {
-  required_version = ">= 0.12"
-}
-
 provider aws {
   version = "~> 2.0"
   region  = var.aws_region
 }
 
 terraform {
+  required_version = ">= 0.12"
+
   backend "s3" {
     region         = "eu-north-1"
     encrypt        = true

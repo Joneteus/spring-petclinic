@@ -33,6 +33,18 @@ resource aws_iam_role joneteus-spring-petclinic-ecs-task-exec {
 }
 
 # ECS Task Definition
+data template_file joneteus-spring-petclinic-container-def {
+  template = file("./spring-petclinic-container-def.json")
+  vars = {
+    app_name = "joneteus-spring-petclinic"
+    app_image = "${aws_ecr_repository.joneteus-spring-petclinic.repository_url}:latest"
+    app_port = 8080
+    fargate_cpu = 512
+    fargate_memory = 1024
+    aws_region = var.aws_region
+  }
+}
+
 resource aws_ecs_task_definition joneteus-spring-petclinic {
   family = "joneteus-spring-petclinic"
   requires_compatibilities = ["FARGATE"]
@@ -40,31 +52,7 @@ resource aws_ecs_task_definition joneteus-spring-petclinic {
   memory = 1024
   network_mode = "awsvpc"
   execution_role_arn = aws_iam_role.joneteus-spring-petclinic-ecs-task-exec.arn
-  container_definitions = <<EOF
-[
-  {
-    "name": "joneteus-spring-petclinic",
-    "image": "${aws_ecr_repository.joneteus-spring-petclinic.repository_url}:latest",
-    "essential": true,
-    "cpu": 512,
-    "memory": 1024,
-    "portMappings": [
-      {
-        "containerPort": 8080,
-        "hostPort": 8080
-      }
-    ],
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-region": "${var.aws_region}",
-        "awslogs-group": "joneteus-spring-petclinic",
-        "awslogs-stream-prefix": "ecs"
-      }
-    }
-  }
-]
-EOF
+  container_definitions = data.template_file.joneteus-spring-petclinic-container-def.rendered
 }
 
 # ECS Service
