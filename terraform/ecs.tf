@@ -3,12 +3,6 @@ resource aws_ecr_repository joneteus-spring-petclinic {
   name = var.app_name
 }
 
-resource aws_ssm_parameter joneteus-spring-petclinic-ecr-repo-name-param {
-  type  = "String"
-  name  = "/joneteus-spring-petclinic/ecr/repo-name"
-  value = aws_ecr_repository.joneteus-spring-petclinic.name
-}
-
 resource aws_cloudwatch_log_group joneteus-spring-petclinic-logs {
   name = var.app_name
 }
@@ -100,4 +94,26 @@ resource aws_ecs_service joneteus-spring-petclinic {
   }
 
   depends_on = [aws_lb.joneteus-spring-petclinic-alb]
+}
+
+# Export values to SSM parameter store
+resource aws_ssm_parameter joneteus-spring-petclinic-ecr-repo-name-param {
+  type  = "String"
+  overwrite = true
+  name  = "/joneteus-spring-petclinic/ecr/repo-name"
+  value = aws_ecr_repository.joneteus-spring-petclinic.name
+}
+
+resource aws_ssm_parameter joneteus-spring-petclinic-ecs-service-name-param {
+  type  = "String"
+  overwrite = true
+  name  = "/joneteus-spring-petclinic/ecs/service-name"
+  value = aws_ecs_service.joneteus-spring-petclinic.name
+}
+
+resource aws_ssm_parameter joneteus-spring-petclinic-ecs-cluster-name-param {
+  type  = "String"
+  overwrite = true
+  name  = "/joneteus-spring-petclinic/ecs/cluster-name"
+  value = aws_ecs_cluster.joneteus-spring-petclinic.name
 }
