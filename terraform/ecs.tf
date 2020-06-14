@@ -1,14 +1,14 @@
 # Base resources for ECS
 resource aws_ecr_repository joneteus-spring-petclinic {
-  name = "joneteus-spring-petclinic"
+  name = var.app_name
 }
 
 resource aws_cloudwatch_log_group joneteus-spring-petclinic-logs {
-  name = "joneteus-spring-petclinic"
+  name = var.app_name
 }
 
 resource aws_ecs_cluster joneteus-spring-petclinic {
-  name = "joneteus-spring-petclinic"
+  name = var.app_name
 }
 
 # ECS Task execution role
@@ -28,7 +28,7 @@ resource aws_iam_role_policy_attachment aws-ecs-task-exec-attach {
 }
 
 resource aws_iam_role joneteus-spring-petclinic-ecs-task-exec {
-  name = "joneteus-spring-petclinic-task-execution-role"
+  name = "${var.app_name}-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.joneteus-spring-petclinic-assume.json
 }
 
@@ -36,7 +36,7 @@ resource aws_iam_role joneteus-spring-petclinic-ecs-task-exec {
 data template_file joneteus-spring-petclinic-container-def {
   template = file("./spring-petclinic-container-def.json")
   vars = {
-    app_name = "joneteus-spring-petclinic"
+    app_name = var.app_name
     app_image = "${aws_ecr_repository.joneteus-spring-petclinic.repository_url}:latest"
     app_port = 8080
     fargate_cpu = 512
@@ -46,7 +46,7 @@ data template_file joneteus-spring-petclinic-container-def {
 }
 
 resource aws_ecs_task_definition joneteus-spring-petclinic {
-  family = "joneteus-spring-petclinic"
+  family = var.app_name
   requires_compatibilities = ["FARGATE"]
   cpu = 512
   memory = 1024
@@ -57,8 +57,8 @@ resource aws_ecs_task_definition joneteus-spring-petclinic {
 
 # ECS Service
 resource aws_security_group joneteus-spring-petclinic-ecs-sg {
-  name_prefix        = "joneteus-spring-petclinic-ecs"
-  description = "Security group for joneteus-spring-petclinic ECS application"
+  name_prefix        = "${var.app_name}-ecs"
+  description = "Security group for ${var.app_name} ECS application"
   vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
 
   ingress {
@@ -71,7 +71,7 @@ resource aws_security_group joneteus-spring-petclinic-ecs-sg {
 }
 
 resource aws_ecs_service joneteus-spring-petclinic {
-  name = "joneteus-spring-petclinic-service"
+  name = "${var.app_name}-service"
   cluster = aws_ecs_cluster.joneteus-spring-petclinic.id
   launch_type = "FARGATE"
   platform_version = "1.4.0"
@@ -89,7 +89,7 @@ resource aws_ecs_service joneteus-spring-petclinic {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.joneteus-spring-petclinic-tg.arn
-    container_name   = "joneteus-spring-petclinic"
+    container_name   = var.app_name
     container_port   = 8080
   }
 }

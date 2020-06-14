@@ -1,5 +1,8 @@
 aws_region = "eu-north-1"
 
+app_name = "joneteus-spring-petclinic"
+app_access_cidr = "88.148.236.57/32"
+
 # Networks
 # -> Public cidr block 10.50.0.0/17
 # -> Private cidr block 10.50.128.0/17
