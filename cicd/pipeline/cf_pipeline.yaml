@@ -18,10 +18,32 @@ Parameters:
   TerraformVersion:
     Type: String
     Default: "0.12.26"
+  TerraformStateBucketName:
+    Type: String
+    Default: joneteus-terraform-state-bucket
+  TerraformStateObjectKey:
+    Type: String
+    Default: aws-spring-petclinic/state
+  TerraformStateLockDynamoDBTable:
+    Type: String
+    Default: "aws-spring-petclinic-lock"
 
 Resources:
   CodePipelineArtifactStoreBucket:
     Type: AWS::S3::Bucket
+
+  CodePipelineArtifactStoreAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: FullAccessToCodepipelineArtifactBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource:
+              - !Sub "arn:aws:s3:::${CodePipelineArtifactStoreBucket}"
+              - !Sub "arn:aws:s3:::${CodePipelineArtifactStoreBucket}/*"
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -34,14 +56,28 @@ Resources:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        - !Ref CodePipelineArtifactStoreAccessPolicy
         - arn:aws:iam::aws:policy/AmazonVPCFullAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/AmazonECS_FullAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
         - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
       Policies:
-        - PolicyName: allow-access-to-ddb-lock
+        - PolicyName: allow-access-to-terraform-state-bucket
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${TerraformStateBucketName}"
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${TerraformStateBucketName}/${TerraformStateObjectKey}"
+        - PolicyName: allow-access-to-terraform-ddb-lock
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -50,7 +86,7 @@ Resources:
                   - "dynamodb:GetItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"
-                Resource: arn:aws:dynamodb:eu-north-1:836922991352:table/aws-spring-petclinic-lock
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TerraformStateLockDynamoDBTable}
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -63,9 +99,9 @@ Resources:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        - !Ref CodePipelineArtifactStoreAccessPolicy
         - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
   CodebuildTerraform:
     Type: AWS::CodeBuild::Project
