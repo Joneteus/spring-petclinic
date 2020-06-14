@@ -10,6 +10,7 @@ phases:
 
   pre_build:
     commands:
-      - cd ${CODEBUILD_SRC_DIR_SourceOutput}/terraform
+      - ls -la $CODEBUILD_SRC_DIR
+      - cd $CODEBUILD_SRC_DIR/terraform
       - terraform init
       - terraform validate
