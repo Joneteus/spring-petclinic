@@ -125,7 +125,7 @@ Resources:
                 Branch: !Ref BranchName
                 Owner: !Ref GitHubOwner
                 OAuthToken: !Sub "{{resolve:secretsmanager:${GithubTokenSecretArn}:SecretString:token}}"
-                PollForSourceChanges: true
+                PollForSourceChanges: false
               RunOrder: 1
         - Name: TerraformBuild
           Actions:
