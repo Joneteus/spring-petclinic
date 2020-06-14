@@ -15,6 +15,9 @@ Parameters:
   GithubTokenSecretArn:
     Type: String
     Default: arn:aws:secretsmanager:eu-north-1:836922991352:secret:JoneteusGithubSecret-jDbXa2
+  TerraformVersion:
+    Type: String
+    Default: "0.12.26"
 
 Resources:
   CodePipelineArtifactStoreBucket:
@@ -64,6 +67,9 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        EnvironmentVariables:
+          - Name: TF_VERSION
+            Value: !Ref TerraformVersion
 
   AppPipelineWebhook:
     Type: AWS::CodePipeline::Webhook
