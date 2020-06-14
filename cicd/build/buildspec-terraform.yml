@@ -1,22 +1,15 @@
 version: 0.2
 
 phases:
-  terraform-install:
+  install:
     commands:
       - curl https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip -o /tmp/terraform_0.12.26_linux_amd64.zip
       - unzip /tmp/terraform_0.12.26_linux_amd64.zip -d /tmp/terraform_0.12.26_linux_amd64/
       - ln -s /tmp/terraform_0.12.26_linux_amd64/terraform /usr/bin/terraform
+      - terraform -v
 
-  terraform-init:
+  pre_build:
     commands:
       - cd $CODEBUILD_SRC_DIR/terraform
       - terraform init
-
-  terraform-validate:
-    commands:
-      - cd $CODEBUILD_SRC_DIR/terraform
       - terraform validate
-
-  build:
-    commands:
-      - bash build/buildspec-process-templates.sh
