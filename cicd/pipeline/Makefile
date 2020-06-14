@@ -1,9 +1,9 @@
 region=eu-north-1
-stack_name=joneteus-spring-petclinic-cicd
+infra-pipeline-stack-name=joneteus-spring-petclinic-cicd
 
-deploy:
+deploy-infra-pipeline:
 		@aws cloudformation deploy \
 			--region $(region) \
-			--stack-name $(stack_name) \
-			--template-file cf_pipeline.yaml \
+			--stack-name $(infra-pipeline-stack-name) \
+			--template-file cf_infra_pipeline.yaml \
 			--capabilities CAPABILITY_NAMED_IAM
