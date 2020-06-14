@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: spring-petclinic
+  GitHubOwner:
+    Type: String
+    Default: Joneteus
+  GithubTokenSecretArn:
+    Type: String
+    Default: arn:aws:secretsmanager:eu-north-1:836922991352:secret:JoneteusGithubSecret-jDbXa2
+  EcrRepoName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/joneteus-spring-petclinic/ecr/repo-name"
+
+Resources:
+  CodePipelineArtifactStoreBucket:
+    Type: AWS::S3::Bucket
+
+  CodePipelineArtifactStoreAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource:
+              - !Sub "arn:aws:s3:::${CodePipelineArtifactStoreBucket}"
+              - !Sub "arn:aws:s3:::${CodePipelineArtifactStoreBucket}/*"
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref CodePipelineArtifactStoreAccessPolicy
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref CodePipelineArtifactStoreAccessPolicy
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+
+  SpringPetclinicDocker:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: cicd/build/buildspec-docker.yml
+      TimeoutInMinutes: 15
+      ServiceRole: !Ref CodeBuildServiceRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Sub ${AWS::Region}
+          - Name: AWS_ACCOUNT_ID
+            Value: !Sub ${AWS::AccountId}
+          - Name: IMAGE_REPO_NAME
+            Value: !Ref EcrRepoName
+          - Name: IMAGE_TAG
+            Value: "latest"
+
+  AppPipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Sub "{{resolve:secretsmanager:${GithubTokenSecretArn}:SecretString:token}}"
+      Filters:
+        - JsonPath: $.ref
+          MatchEquals: "refs/heads/{Branch}"
+      TargetPipeline: !Ref Pipeline
+      TargetAction: SourceAction
+      TargetPipelineVersion: !GetAtt Pipeline.Version
+      RegisterWithThirdParty: true
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStoreBucket
+      Stages:
+        - Name: GithubSource
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: "1"
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                Owner: !Ref GitHubOwner
+                OAuthToken: !Sub "{{resolve:secretsmanager:${GithubTokenSecretArn}:SecretString:token}}"
+                PollForSourceChanges: false
+              RunOrder: 1
+        - Name: DockerBuild
+          Actions:
+            - Name: Dockerizing
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref SpringPetclinicDocker
