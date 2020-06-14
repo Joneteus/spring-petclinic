@@ -3,6 +3,12 @@ resource aws_ecr_repository joneteus-spring-petclinic {
   name = var.app_name
 }
 
+resource aws_ssm_parameter joneteus-spring-petclinic-ecr-repo-name-param {
+  type  = "String"
+  name  = "/joneteus-spring-petclinic/ecr/repo-name"
+  value = aws_ecr_repository.joneteus-spring-petclinic.name
+}
+
 resource aws_cloudwatch_log_group joneteus-spring-petclinic-logs {
   name = var.app_name
 }
