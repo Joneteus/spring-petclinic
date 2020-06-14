@@ -46,7 +46,7 @@ resource aws_subnet public-subnet-a {
   map_public_ip_on_launch = true
 }
 
-resource aws_route_table_association public-subnet-a-rt-ass {
+resource aws_route_table_association public-subnet-a-rta {
   subnet_id      = aws_subnet.public-subnet-a.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
 }
@@ -58,7 +58,7 @@ resource aws_subnet public-subnet-b {
   map_public_ip_on_launch = true
 }
 
-resource aws_route_table_association public-subnet-b-rt-ass {
+resource aws_route_table_association public-subnet-b-rta {
   subnet_id      = aws_subnet.public-subnet-b.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
 }
@@ -70,7 +70,7 @@ resource aws_subnet public-subnet-c {
   map_public_ip_on_launch = true
 }
 
-resource aws_route_table_association public-subnet-c-rt-ass {
+resource aws_route_table_association public-subnet-c-rta {
   subnet_id      = aws_subnet.public-subnet-c.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-public-rt.id
 }
@@ -91,7 +91,7 @@ resource aws_subnet private-subnet-a {
   availability_zone = join("", [var.aws_region, "a"])
 }
 
-resource aws_route_table_association private-subnet-a-rt-ass {
+resource aws_route_table_association private-subnet-a-rta {
   subnet_id      = aws_subnet.private-subnet-a.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-private-rt.id
 }
@@ -102,7 +102,7 @@ resource aws_subnet private-subnet-b {
   availability_zone = join("", [var.aws_region, "b"])
 }
 
-resource aws_route_table_association private-subnet-b-rt-ass {
+resource aws_route_table_association private-subnet-b-rta {
   subnet_id      = aws_subnet.private-subnet-b.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-private-rt.id
 }
@@ -113,13 +113,13 @@ resource aws_subnet private-subnet-c {
   availability_zone = join("", [var.aws_region, "c"])
 }
 
-resource aws_route_table_association private-subnet-c-rt-ass {
+resource aws_route_table_association private-subnet-c-rta {
   subnet_id      = aws_subnet.private-subnet-c.id
   route_table_id = aws_route_table.joneteus-spring-petclinic-private-rt.id
 }
 
-resource aws_security_group joneteus-spring-petclinic-ecs {
-  name        = "joneteus-spring-petclinic-ecs"
+resource aws_security_group joneteus-spring-petclinic-ecs-sg {
+  name_prefix        = "joneteus-spring-petclinic-ecs"
   description = "Security group for joneteus-spring-petclinic ECS application"
   vpc_id      = aws_vpc.joneteus-spring-petclinic-vpc.id
 
@@ -207,17 +207,17 @@ EOF
 resource aws_ecs_service joneteus-spring-petclinic {
   name = "joneteus-spring-petclinic-service"
   cluster = aws_ecs_cluster.joneteus-spring-petclinic.id
-  task_definition = aws_ecs_task_definition.joneteus-spring-petclinic.arn
   launch_type = "FARGATE"
+  platform_version = "1.4.0"
+  task_definition = aws_ecs_task_definition.joneteus-spring-petclinic.arn
   desired_count = 1
 
   network_configuration {
-    assign_public_ip = true
-    security_groups = [ aws_security_group.joneteus-spring-petclinic-ecs.id ]
+    security_groups = [ aws_security_group.joneteus-spring-petclinic-ecs-sg.id ]
     subnets = [
-      aws_subnet.public-subnet-a.id,
-      aws_subnet.public-subnet-b.id,
-      aws_subnet.public-subnet-c.id
+      aws_subnet.private-subnet-a.id,
+      aws_subnet.private-subnet-b.id,
+      aws_subnet.private-subnet-c.id
       ]
   }
 }
