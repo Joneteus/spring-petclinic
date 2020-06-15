@@ -1,9 +1,6 @@
 # --------------------
 # First stage for Maven build
-FROM alpine:3 as maven_builder
-
-# Install openjdk11 with Alpine package manager apk
-RUN apk --no-cache add openjdk11
+FROM openjdk:8-jdk-alpine as maven_builder
 
 # Copy necessary files into container image
 COPY mvnw pom.xml /app/
@@ -18,8 +15,7 @@ RUN ./mvnw package
 
 # --------------------
 # Second stage for creating Docker image for running the application
-FROM alpine:3
-RUN apk --no-cache add openjdk11
+FROM openjdk:8-jre-alpine
 
 # Copy .jar artefact from build container
 COPY --from=maven_builder /app/target/*.jar /app/petclinic-app.jar
