@@ -21,6 +21,13 @@ resource aws_security_group joneteus-spring-petclinic-alb-sg {
     protocol    = "-1"
     cidr_blocks = [ var.app_access_cidr ]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource aws_lb_listener joneteus-spring-petclinic-http  {

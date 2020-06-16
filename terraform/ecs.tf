@@ -68,13 +68,20 @@ resource aws_security_group joneteus-spring-petclinic-ecs-sg {
     protocol    = "tcp"
     security_groups = [aws_security_group.joneteus-spring-petclinic-alb-sg.id]
   }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource aws_ecs_service joneteus-spring-petclinic {
   name = "${var.app_name}-service"
   cluster = aws_ecs_cluster.joneteus-spring-petclinic.id
   launch_type = "FARGATE"
-  platform_version = "1.3.0"
+  platform_version = "1.4.0"
   task_definition = aws_ecs_task_definition.joneteus-spring-petclinic.arn
   desired_count = 1
 
